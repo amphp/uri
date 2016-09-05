@@ -1,0 +1,26 @@
+{
+  "name": "amphp/uri",
+  "homepage": "https://github.com/amphp/uri",
+  "description": "Uri Parser and Resolver.",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Daniel Lowrey"
+    },
+    {
+      "name": "Niklas Keller"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/amphp/uri/issues"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^4|^5",
+    "friendsofphp/php-cs-fixer": "^1.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "Amp\\Uri\\": "src"
+    }
+  }
+}
