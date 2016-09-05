@@ -1,6 +1,6 @@
 <?php
 
-namespace Amp\Artax;
+namespace Amp\Uri;
 
 /**
  * Provides URI parsing and can resolve URIs.
@@ -238,7 +238,7 @@ class Uri {
 
         $base = $this;
 
-        $t = new \StdClass;
+        $t = new \stdClass;
         $t->scheme = '';
         $t->authority = '';
         $t->path = '';
