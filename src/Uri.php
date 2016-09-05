@@ -2,6 +2,9 @@
 
 namespace Amp\Artax;
 
+/**
+ * Provides URI parsing and can resolve URIs.
+ */
 class Uri {
     private $scheme = '';
     private $user = '';
@@ -18,7 +21,7 @@ class Uri {
     public function __construct($uri) {
         $uri = (string) $uri;
 
-        if (!$parts = $this->parse($uri)) {
+        if (!$parts = parse_url($uri)) {
             throw new \DomainException(
                 'Invalid URI specified at ' . get_class($this) . '::__construct Argument 1'
             );
@@ -56,41 +59,6 @@ class Uri {
             $this->fragment = rawurldecode($this->fragment);
             $this->fragment = rawurlencode($this->fragment);
         }
-    }
-
-    private function parse($uri) {
-        // PHP 5.4.7 fixed the incorrect parsing of network path references
-        // @codeCoverageIgnoreStart
-        if (PHP_VERSION_ID >= 50407) {
-            return parse_url($uri);
-        }
-        // @codeCoverageIgnoreEnd
-
-        $isPhp533 = PHP_VERSION_ID >= 50303;
-
-        // PHP < 5.3.3 triggers E_WARNING on failure
-        $parts = $isPhp533 ? parse_url($uri) : @parse_url($uri);
-
-        // If no path is present or it's not a network path reference we're finished
-        if (!isset($parts['path']) || substr($parts['path'], 0, 2) !== '//') {
-            return $parts;
-        }
-
-        $schemeExists = isset($parts['scheme']);
-        $tmpScheme = $schemeExists ? $parts['scheme'] : 'scheme';
-
-        $tmpUri = $tmpScheme . ':' . $parts['path'];
-        $tmpParts = $isPhp533 ? parse_url($tmpUri) : @parse_url($tmpUri);
-
-        $parts['host'] = $tmpParts['host'];
-
-        if (isset($tmpParts['path'])) {
-            $parts['path'] = $tmpParts['path'];
-        } else {
-            unset($parts['path']);
-        }
-
-        return $parts;
     }
 
     public function __toString() {
@@ -134,7 +102,7 @@ class Uri {
     }
 
     /**
-     * Normalizes the URI for maximal comparison success
+     * Normalizes the URI for maximal comparison success.
      *
      * @return string
      */
