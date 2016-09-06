@@ -434,15 +434,15 @@ class Uri {
     }
 
     /**
-     * Is the specified URI string resolvable against the current URI instance?
+     * Test whether the specified value is a valid URI.
      */
-    public static function isResolvable($toResolve) {
-        if (!(is_string($toResolve) || method_exists($toResolve, '__toString'))) {
+    public static function isValid($uri) {
+        if (!(is_string($uri) || method_exists($uri, '__toString'))) {
             return false;
         }
 
         try {
-            (new Uri($toResolve));
+            (new Uri($uri));
         } catch (\DomainException $e) {
             return false;
         }
