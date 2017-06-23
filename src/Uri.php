@@ -14,7 +14,7 @@ class Uri {
     private $path = '';
     private $query = '';
     private $fragment = '';
-    private $queryParameters = array();
+    private $queryParameters = [];
     private $isIpV4 = false;
     private $isIpV6 = false;
 
@@ -127,12 +127,12 @@ class Uri {
 
     /**
      * "URI producers and normalizers should omit the port component and its ":" delimiter if port
-     * is empty or if its value would be the same as that of the scheme's default."
+     * is empty or if its value would be the same as that of the scheme's default.".
      *
      * @see http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.3
      */
     private function normalizeDefaultPort() {
-        switch($this->scheme) {
+        switch ($this->scheme) {
             case 'http':
                 $this->port = ($this->port == 80) ? '' : $this->port;
                 break;
@@ -191,8 +191,8 @@ class Uri {
         $str = rawurldecode($str);
         $str = rawurlencode($str);
 
-        $encoded = array('%2F', '%3A', '%40');
-        $decoded = array('/', ':', '@');
+        $encoded = ['%2F', '%3A', '%40'];
+        $decoded = ['/', ':', '@'];
 
         return str_replace($encoded, $decoded, $str);
     }
@@ -201,8 +201,8 @@ class Uri {
      * @see http://www.apps.ietf.org/rfc/rfc3986.html#sec-2.2
      */
     private function decodeReservedSubDelimiters($str) {
-        $encoded = array('%21', '%24', '%26', '%27', '%28', '%29', '%2A', '%2B', '%2C', '%3B', '%3D');
-        $decoded = array('!', '$', '&', "'", '(', ')', '*', '+', ',', ';', '=');
+        $encoded = ['%21', '%24', '%26', '%27', '%28', '%29', '%2A', '%2B', '%2C', '%3B', '%3D'];
+        $decoded = ['!', '$', '&', "'", '(', ')', '*', '+', ',', ';', '='];
 
         return str_replace($encoded, $decoded, $str);
     }
@@ -339,7 +339,7 @@ class Uri {
     }
 
     /**
-     * Retrieve the URI without the fragment component
+     * Retrieve the URI without the fragment component.
      */
     public function getAbsoluteUri() {
         return $this->reconstitute(
