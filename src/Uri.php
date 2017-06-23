@@ -207,23 +207,6 @@ class Uri {
         return str_replace($encoded, $decoded, $str);
     }
 
-	/**
-     * Is the specified URI string resolvable against the current URI instance?
-     */
-    public function canResolve($toResolve) {
-        if (!(is_string($toResolve) || method_exists($toResolve, '__toString'))) {
-            return false;
-        }
-
-        try {
-            (new Uri($toResolve));
-        } catch (\DomainException $e) {
-            return false;
-        }
-
-        return true;
-    }
-
     /**
      * @param string $toResolve
      * @return Uri
@@ -448,5 +431,22 @@ class Uri {
      */
     public function getOriginalUri() {
         return $this->uri;
+    }
+
+    /**
+     * Test whether the specified value is a valid URI.
+     */
+    public static function isValid($uri) {
+        if (!(is_string($uri) || method_exists($uri, '__toString'))) {
+            return false;
+        }
+
+        try {
+            (new Uri($uri));
+        } catch (\DomainException $e) {
+            return false;
+        }
+
+        return true;
     }
 }
