@@ -55,7 +55,11 @@ final class Uri {
                 $this->isIpv4 = true;
             }
         } elseif ($this->host) {
-            $this->host = normalizeDnsName($this->host);
+            try {
+                $this->host = normalizeDnsName($this->host);
+            } catch (InvalidDnsNameException $e) {
+                throw new InvalidUriException("Invalid URI: Invalid host: {$this->host}", 0, $e);
+            }
         }
 
         if ($this->port === 0) {
