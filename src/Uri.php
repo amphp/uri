@@ -5,12 +5,20 @@ namespace Amp\Uri;
 /**
  * Provides URI parsing and can resolve URIs.
  */
-class Uri {
+final class Uri {
+    private $defaultPortMap = [
+        "http" => 80,
+        "https" => 443,
+        "ftp" => 21,
+        "ftps" => 990,
+        "smtp" => 25,
+    ];
+
     private $scheme = '';
     private $user = '';
     private $pass = '';
     private $host = '';
-    private $port = '';
+    private $port = 0;
     private $path = '';
     private $query = '';
     private $fragment = '';
@@ -18,12 +26,10 @@ class Uri {
     private $isIpV4 = false;
     private $isIpV6 = false;
 
-    public function __construct($uri) {
-        $uri = (string) $uri;
-
+    public function __construct(string $uri) {
         if (!$parts = parse_url($uri)) {
-            throw new \DomainException(
-                'Invalid URI specified at ' . get_class($this) . '::__construct Argument 1'
+            throw new InvalidUriException(
+                'Invalid URI specified at ' . self::class . '::__construct Argument 1: ' . $uri
             );
         }
 
@@ -35,22 +41,27 @@ class Uri {
 
         // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.1
         // "schemes are case-insensitive"
-        $this->scheme = strtolower($this->scheme);
+        $this->scheme = \strtolower($this->scheme);
 
         // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.2
         // "Although host is case-insensitive, producers and normalizers should use lowercase for
         // registered names and hexadecimal addresses for the sake of uniformity"
-        $this->host = strtolower($this->host);
+        if ($inAddr = @\inet_pton(\trim($this->host, "[]"))) {
+            $this->host = \strtolower($this->host);
 
-        if ($this->port && $this->scheme) {
-            $this->normalizeDefaultPort();
+            if (isset($inAddr[4])) {
+                $this->isIpV6 = true;
+            } else {
+                $this->isIpv4 = true;
+            }
+        } elseif ($this->host) {
+            $this->host = normalizeDnsName($this->host);
         }
 
-        $ip = @inet_pton($this->host);
-        if (isset($ip[5])) {
-            $this->isIpV6 = true;
-        } elseif ($ip) {
-            $this->isIpv4 = true;
+        if ($this->port === 0) {
+            if (isset($this->defaultPortMap[$this->scheme])) {
+                $this->port = $this->defaultPortMap[$this->scheme];
+            }
         }
 
         $this->parseQueryParameters();
@@ -74,7 +85,7 @@ class Uri {
     /**
      * @see http://tools.ietf.org/html/rfc3986#section-5.3
      */
-    private function reconstitute($scheme, $authority, $path, $query, $fragment) {
+    private function reconstitute($scheme, $authority, $path, $query, $fragment): string {
         $result = '';
 
         if ($scheme) {
@@ -106,7 +117,7 @@ class Uri {
      *
      * @return string
      */
-    public function normalize() {
+    public function normalize(): string {
         if (!$this->uri) {
             return '';
         }
@@ -127,42 +138,42 @@ class Uri {
 
     /**
      * "URI producers and normalizers should omit the port component and its ":" delimiter if port
-     * is empty or if its value would be the same as that of the scheme's default.".
+     * is empty or if its value would be the same as that of the scheme's default".
      *
      * @see http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.3
      */
-    private function normalizeDefaultPort() {
-        switch ($this->scheme) {
-            case 'http':
-                $this->port = ($this->port == 80) ? '' : $this->port;
-                break;
-            case 'https':
-                $this->port = ($this->port == 443) ? '' : $this->port;
-                break;
-            case 'ftp':
-                $this->port = ($this->port == 21) ? '' : $this->port;
-                break;
-            case 'ftps':
-                $this->port = ($this->port == 990) ? '' : $this->port;
-                break;
-            case 'smtp':
-                $this->port = ($this->port == 25) ? '' : $this->port;
-                break;
+    private function getNormalizedDefaultPort(): string {
+        if ($this->port === 0) {
+            return "";
         }
+
+        if (isset($this->defaultPortMap[$this->scheme])) {
+            $defaultPort = $this->defaultPortMap[$this->scheme];
+
+            if ($defaultPort === $this->port) {
+                return "";
+            }
+        }
+
+        return ":" . $this->port;
     }
 
     /**
+     * @param string $input
+     *
+     * @return string
+     *
      * @link http://www.apps.ietf.org/rfc/rfc3986.html#sec-5.2.4
      */
-    private function removeDotSegments($input) {
+    private function removeDotSegments(string $input): string {
         $output = '';
 
-        $patternA  = ',^(\.\.?/),';
+        $patternA = ',^(\.\.?/),';
         $patternB1 = ',^(/\./),';
         $patternB2 = ',^(/\.)$,';
-        $patternC  = ',^(/\.\./|/\.\.),';
+        $patternC = ',^(/\.\./|/\.\.),';
         // $patternD  = ',^(\.\.?)$,';
-        $patternE  = ',(/*[^/]*),';
+        $patternE = ',(/*[^/]*),';
 
         while ($input !== '') {
             if (preg_match($patternA, $input)) {
@@ -204,18 +215,20 @@ class Uri {
         $encoded = ['%21', '%24', '%26', '%27', '%28', '%29', '%2A', '%2B', '%2C', '%3B', '%3D'];
         $decoded = ['!', '$', '&', "'", '(', ')', '*', '+', ',', ';', '='];
 
-        return str_replace($encoded, $decoded, $str);
+        return \str_replace($encoded, $decoded, $str);
     }
 
     /**
      * @param string $toResolve
+     *
      * @return Uri
+     *
      * @see http://tools.ietf.org/html/rfc3986#section-5.2.2
      */
-    public function resolve($toResolve) {
+    public function resolve(string $toResolve) {
         $r = new Uri($toResolve);
 
-        if ($r->__toString() === '') {
+        if ((string) $r === '') {
             return clone $this;
         }
 
@@ -229,15 +242,15 @@ class Uri {
         $t->fragment = '';
 
         if ('' !== $r->getScheme()) {
-            $t->scheme    = $r->getScheme();
+            $t->scheme = $r->getScheme();
             $t->authority = $r->getAuthority();
-            $t->path      = $this->removeDotSegments($r->getPath());
-            $t->query     = $r->getQuery();
+            $t->path = $this->removeDotSegments($r->getPath());
+            $t->query = $r->getQuery();
         } else {
             if ('' !== $r->getAuthority()) {
                 $t->authority = $r->getAuthority();
-                $t->path      = $this->removeDotSegments($r->getPath());
-                $t->query     = $r->getQuery();
+                $t->path = $this->removeDotSegments($r->getPath());
+                $t->query = $r->getQuery();
             } else {
                 if ('' == $r->getPath()) {
                     $t->path = $base->getPath();
@@ -273,10 +286,10 @@ class Uri {
         if ($basePath == '') {
             $merged = '/' . $pathToMerge;
         } else {
-            $parts = explode('/', $basePath);
-            array_pop($parts);
+            $parts = \explode('/', $basePath);
+            \array_pop($parts);
             $parts[] = $pathToMerge;
-            $merged = implode('/', $parts);
+            $merged = \implode('/', $parts);
         }
 
         return $this->removeDotSegments($merged);
@@ -285,56 +298,56 @@ class Uri {
     /**
      * @return string
      */
-    public function getScheme() {
+    public function getScheme(): string {
         return $this->scheme;
     }
 
     /**
      * @return string
      */
-    public function getUser() {
+    public function getUser(): string {
         return $this->user;
     }
 
     /**
      * @return string
      */
-    public function getPass() {
+    public function getPass(): string {
         return $this->pass;
     }
 
     /**
      * @return string
      */
-    public function getHost() {
+    public function getHost(): string {
         return $this->host;
     }
 
     /**
      * @return int
      */
-    public function getPort() {
+    public function getPort(): int {
         return $this->port;
     }
 
     /**
      * @return string
      */
-    public function getPath() {
+    public function getPath(): string {
         return $this->path;
     }
 
     /**
      * @return string
      */
-    public function getQuery() {
+    public function getQuery(): string {
         return $this->query;
     }
 
     /**
      * @return string
      */
-    public function getFragment() {
+    public function getFragment(): string {
         return $this->fragment;
     }
 
@@ -354,33 +367,33 @@ class Uri {
     /**
      * @return bool
      */
-    public function isIpV4() {
+    public function isIpV4(): bool {
         return $this->isIpV4;
     }
 
     /**
      * @return bool
      */
-    public function isIpV6() {
+    public function isIpV6(): bool {
         return $this->isIpV6;
     }
 
     /**
+     * @param bool $hiddenPass Whether to hide the password.
+     *
+     * @return string
+     *
      * @see http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2
      */
-    public function getAuthority($hiddenPass = true) {
+    public function getAuthority(bool $hiddenPass = true): string {
         $authority = $this->user;
-        $authority.= $this->pass !== ''
+        $authority .= $this->pass !== ''
             ? (':' . ($hiddenPass ? '********' : $this->pass))
             : '';
-        $authority.= $authority ? '@' : '';
 
-        if ($this->isIpV6) {
-            $authority.= $this->port ? ("[{$this->host}]:{$this->port}") : "[{$this->host}]";
-        } else {
-            $authority.= $this->host;
-            $authority.= $this->port ? (':' . $this->port) : '';
-        }
+        $authority .= $authority ? '@' : '';
+        $authority .= $this->isIpV6 ? "[{$this->host}]" : $this->host;
+        $authority .= $this->getNormalizedDefaultPort();
 
         return $authority;
     }
@@ -388,9 +401,10 @@ class Uri {
     private function parseQueryParameters() {
         if ($this->query) {
             $parameters = [];
+
             foreach (explode("&", $this->query) as $pair) {
                 $pair = explode("=", $pair, 2);
-                $parameters[rawurldecode($pair[0])][] = rawurldecode(isset($pair[1]) ? $pair[1] : "");
+                $parameters[rawurldecode($pair[0])][] = rawurldecode($pair[1] ?? "");
             }
 
             $this->queryParameters = $parameters;
@@ -398,52 +412,63 @@ class Uri {
     }
 
     /**
+     * Check whether the specified query parameter exists.
+     *
      * @param string $parameter
+     *
      * @return bool
      */
-    public function hasQueryParameter($parameter) {
+    public function hasQueryParameter(string $parameter): bool {
         return isset($this->queryParameters[$parameter]);
     }
 
     /**
+     * Get the first occurrence of the specified query parameter.
+     *
      * @param string $parameter
+     *
      * @return string
-     * @throws \DomainException
      */
-    public function getQueryParameter($parameter) {
-        if (!$this->hasQueryParameter($parameter)) {
-            throw new \DomainException(
-                "Invalid query parameter: `$parameter` does not exist"
-           );
-        }
-        return $this->queryParameters[$parameter];
+    public function getQueryParameter(string $parameter): string {
+        return $this->queryParameters[$parameter][0] ?? null;
+    }
+
+    /**
+     * Get all occurrences of the specified query parameter.
+     *
+     * @param string $parameter
+     *
+     * @return string[]
+     */
+    public function getQueryParameterArray(string $parameter): array {
+        return $this->queryParameters[$parameter] ?? [];
     }
 
     /**
      * @return array
      */
-    public function getAllQueryParameters() {
+    public function getAllQueryParameters(): array {
         return $this->queryParameters;
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function getOriginalUri() {
+    public function getOriginalUri(): string {
         return $this->uri;
     }
 
     /**
-     * Test whether the specified value is a valid URI.
+     * Test whether the specified string is a valid URI.
+     *
+     * @param string $uri
+     *
+     * @return bool
      */
-    public static function isValid($uri) {
-        if (!(is_string($uri) || method_exists($uri, '__toString'))) {
-            return false;
-        }
-
+    public static function isValid(string $uri): bool {
         try {
-            (new Uri($uri));
-        } catch (\DomainException $e) {
+            new Uri($uri);
+        } catch (InvalidUriException $e) {
             return false;
         }
 

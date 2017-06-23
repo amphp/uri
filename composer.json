@@ -22,6 +22,9 @@
     "autoload": {
         "psr-4": {
             "Amp\\Uri\\": "src"
-        }
+        },
+        "files": [
+            "src/functions.php"
+        ]
     }
 }
