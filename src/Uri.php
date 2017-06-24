@@ -431,9 +431,9 @@ final class Uri {
      *
      * @param string $parameter
      *
-     * @return string
+     * @return string|null
      */
-    public function getQueryParameter(string $parameter): string {
+    public function getQueryParameter(string $parameter) {
         return $this->queryParameters[$parameter][0] ?? null;
     }
 
