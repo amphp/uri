@@ -180,18 +180,18 @@ final class Uri {
         $patternE = ',(/*[^/]*),';
 
         while ($input !== '') {
-            if (preg_match($patternA, $input)) {
-                $input = preg_replace($patternA, '', $input);
-            } elseif (preg_match($patternB1, $input, $match) || preg_match($patternB2, $input, $match)) {
+            if (\preg_match($patternA, $input)) {
+                $input = \preg_replace($patternA, '', $input);
+            } elseif (\preg_match($patternB1, $input, $match) || \preg_match($patternB2, $input, $match)) {
                 $input = preg_replace(",^" . $match[1] . ",", '/', $input);
-            } elseif (preg_match($patternC, $input, $match)) {
-                $input = preg_replace(',^' . preg_quote($match[1], ',') . ',', '/', $input);
-                $output = preg_replace(',/([^/]+)$,', '', $output);
+            } elseif (\preg_match($patternC, $input, $match)) {
+                $input = \preg_replace(',^' . \preg_quote($match[1], ',') . ',', '/', $input);
+                $output = \preg_replace(',/([^/]+)$,', '', $output);
             } elseif ($input == '.' || $input == '..') { // pattern D
                 $input = '';
-            } elseif (preg_match($patternE, $input, $match)) {
+            } elseif (\preg_match($patternE, $input, $match)) {
                 $initialSegment = $match[1];
-                $input = preg_replace(',^' . preg_quote($initialSegment, ',') . ',', '', $input, 1);
+                $input = \preg_replace(',^' . \preg_quote($initialSegment, ',') . ',', '', $input, 1);
                 $output .= $initialSegment;
             }
         }
@@ -203,13 +203,13 @@ final class Uri {
      * @see http://www.apps.ietf.org/rfc/rfc3986.html#sec-2.3
      */
     private function decodeUnreservedCharacters($str) {
-        $str = rawurldecode($str);
-        $str = rawurlencode($str);
+        $str = \rawurldecode($str);
+        $str = \rawurlencode($str);
 
         $encoded = ['%2F', '%3A', '%40'];
         $decoded = ['/', ':', '@'];
 
-        return str_replace($encoded, $decoded, $str);
+        return \str_replace($encoded, $decoded, $str);
     }
 
     /**
@@ -406,9 +406,9 @@ final class Uri {
         if ($this->query) {
             $parameters = [];
 
-            foreach (explode("&", $this->query) as $pair) {
+            foreach (\explode("&", $this->query) as $pair) {
                 $pair = explode("=", $pair, 2);
-                $parameters[rawurldecode($pair[0])][] = rawurldecode($pair[1] ?? "");
+                $parameters[\rawurldecode($pair[0])][] = \rawurldecode($pair[1] ?? "");
             }
 
             $this->queryParameters = $parameters;
