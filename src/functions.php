@@ -30,8 +30,8 @@ function isValidDnsName(string $name) {
 function normalizeDnsName(string $name): string {
     static $pattern = '/^(?<name>[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)(\.(?&name))*$/i';
 
-    if (\function_exists('idn_to_ascii')) {
-        if (false === $result = \idn_to_ascii($name, 0, INTL_IDNA_VARIANT_UTS46)) {
+    if (\function_exists('idn_to_ascii') && \defined('INTL_IDNA_VARIANT_UTS46')) {
+        if (false === $result = \idn_to_ascii($name, 0, \INTL_IDNA_VARIANT_UTS46)) {
             throw new InvalidDnsNameException("Name '{$name}' could not be processed for IDN.");
         }
 
@@ -40,7 +40,7 @@ function normalizeDnsName(string $name): string {
         if (\preg_match('/[\x80-\xff]/', $name)) {
             throw new InvalidDnsNameException(
                 "Name '{$name}' contains non-ASCII characters and IDN support is not available. " .
-                "Verify that ext/intl is installed for IDN support."
+                "Verify that ext/intl is installed for IDN support and that ICU is at least version 4.6."
             );
         }
     }
