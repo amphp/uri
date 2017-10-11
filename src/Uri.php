@@ -54,7 +54,7 @@ final class Uri {
             if (isset($inAddr[4])) {
                 $this->isIpV6 = true;
             } else {
-                $this->isIpv4 = true;
+                $this->isIpV4 = true;
             }
         } elseif ($this->host) {
             try {
