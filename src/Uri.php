@@ -6,6 +6,11 @@ namespace Amp\Uri;
  * Provides URI parsing and can resolve URIs.
  */
 final class Uri {
+    private static $lastHost;
+    private static $lastHostNormalized;
+    private static $lastHostIpV4;
+    private static $lastHostIpV6;
+
     private $defaultPortMap = [
         "http" => 80,
         "https" => 443,
@@ -45,23 +50,33 @@ final class Uri {
         // "schemes are case-insensitive"
         $this->scheme = \strtolower($this->scheme);
 
-        // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.2
-        // "Although host is case-insensitive, producers and normalizers should use lowercase for
-        // registered names and hexadecimal addresses for the sake of uniformity"
-        if ($inAddr = @\inet_pton(\trim($this->host, "[]"))) {
-            $this->host = \strtolower($this->host);
+        if ($this->host === self::$lastHost) {
+            $this->host = self::$lastHostNormalized;
+            $this->isIpV4 = self::$lastHostIpV4;
+            $this->isIpV6 = self::$lastHostIpV6;
+        } else {
+            // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.2
+            // "Although host is case-insensitive, producers and normalizers should use lowercase for
+            // registered names and hexadecimal addresses for the sake of uniformity"
+            if ($inAddr = @\inet_pton(\trim($this->host, "[]"))) {
+                $this->host = \strtolower($this->host);
 
-            if (isset($inAddr[4])) {
-                $this->isIpV6 = true;
-            } else {
-                $this->isIpV4 = true;
+                if (isset($inAddr[4])) {
+                    $this->isIpV6 = true;
+                } else {
+                    $this->isIpV4 = true;
+                }
+            } elseif ($this->host) {
+                try {
+                    $this->host = normalizeDnsName($this->host);
+                } catch (InvalidDnsNameException $e) {
+                    throw new InvalidUriException("Invalid URI: Invalid host: {$this->host}", 0, $e);
+                }
             }
-        } elseif ($this->host) {
-            try {
-                $this->host = normalizeDnsName($this->host);
-            } catch (InvalidDnsNameException $e) {
-                throw new InvalidUriException("Invalid URI: Invalid host: {$this->host}", 0, $e);
-            }
+
+            self::$lastHostNormalized = $this->host;
+            self::$lastHostIpV4 = $this->isIpV4;
+            self::$lastHostIpV6 = $this->isIpV6;
         }
 
         if ($this->port === 0) {
