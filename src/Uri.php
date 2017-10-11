@@ -14,6 +14,7 @@ final class Uri {
         "smtp" => 25,
     ];
 
+    private $uri;
     private $scheme = '';
     private $user = '';
     private $pass = '';
@@ -27,6 +28,7 @@ final class Uri {
     private $isIpV6 = false;
 
     public function __construct(string $uri) {
+        /** @var false|array $parts */
         if (!$parts = parse_url($uri)) {
             throw new InvalidUriException(
                 'Invalid URI specified at ' . self::class . '::__construct Argument 1: ' . $uri
@@ -187,7 +189,7 @@ final class Uri {
             } elseif (\preg_match($patternC, $input, $match)) {
                 $input = \preg_replace(',^' . \preg_quote($match[1], ',') . ',', '/', $input);
                 $output = \preg_replace(',/([^/]+)$,', '', $output);
-            } elseif ($input == '.' || $input == '..') { // pattern D
+            } elseif ($input === '.' || $input === '..') { // pattern D
                 $input = '';
             } elseif (\preg_match($patternE, $input, $match)) {
                 $initialSegment = $match[1];
@@ -256,7 +258,7 @@ final class Uri {
                 $t->path = $this->removeDotSegments($r->getPath());
                 $t->query = $r->getQuery();
             } else {
-                if ('' == $r->getPath()) {
+                if ('' === $r->getPath()) {
                     $t->path = $base->getPath();
                     if ($r->getQuery()) {
                         $t->query = $r->getQuery();
@@ -264,7 +266,7 @@ final class Uri {
                         $t->query = $base->getQuery();
                     };
                 } else {
-                    if ($r->getPath() && substr($r->getPath(), 0, 1) == "/") {
+                    if ($r->getPath() && substr($r->getPath(), 0, 1) === "/") {
                         $t->path = $this->removeDotSegments($r->getPath());
                     } else {
                         $t->path = $this->mergePaths($base->getPath(), $r->getPath());
@@ -287,7 +289,7 @@ final class Uri {
      * @link http://tools.ietf.org/html/rfc3986#section-5.2.3
      */
     private function mergePaths($basePath, $pathToMerge) {
-        if ($basePath == '') {
+        if ($basePath === '') {
             $merged = '/' . $pathToMerge;
         } else {
             $parts = \explode('/', $basePath);
@@ -471,7 +473,7 @@ final class Uri {
      */
     public static function isValid(string $uri): bool {
         try {
-            new Uri($uri);
+            new self($uri);
         } catch (InvalidUriException $e) {
             return false;
         }
