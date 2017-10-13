@@ -410,7 +410,7 @@ final class Uri {
 
             foreach (\explode("&", $this->query) as $pair) {
                 $pair = explode("=", $pair, 2);
-                $parameters[\rawurldecode($pair[0])][] = \rawurldecode($pair[1] ?? "");
+                $parameters[\urldecode($pair[0])][] = \urldecode($pair[1] ?? "");
             }
 
             $this->queryParameters = $parameters;
