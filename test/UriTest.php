@@ -303,11 +303,6 @@ class UriTest extends TestCase {
         $this->assertEquals($expected, 'http://google.com.tw');
     }
 
-    public function testAbNormalizeDnsName() {
-        $this->expectException(InvalidUriException::class);
-        $uri = new Uri('http://Àgoogle.com.tw');
-    }
-
     public function testIsValid() {
         $validUri = 'http://google.com.tw';
         $inValidUri = 'http://:80';
