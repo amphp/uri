@@ -322,7 +322,7 @@ class UriTest extends TestCase {
         $validUri = 'http://www.google.com.tw';
         $uri = new Uri($validUri);
         $expected = $uri->getAbsoluteUri();
-        $this->assertEquals($expected,  $validUri);
+        $this->assertEquals($expected, $validUri);
     }
 
     public function testInvalidDnsNameException() {
