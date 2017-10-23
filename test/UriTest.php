@@ -250,6 +250,14 @@ class UriTest extends TestCase {
         $this->assertEquals($password, $uri->getPass());
     }
 
+    public function testGetAuthorityWithHiddenPassword() {
+        $validUri = 'ssh://username:password@example.com:123';
+        $uri = new Uri($validUri);
+        $password = 'password';
+        $uri->getAuthority(true);
+        $this->assertEquals($password, $uri->getPass());
+    }
+
     public function testIsIpV4() {
         $uri = new Uri('http://www.google.com.tw');
         $expected = $uri->isIpV4();
