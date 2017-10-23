@@ -247,7 +247,6 @@ class UriTest extends TestCase {
         $validUri = 'ssh://username:password@example.com:123';
         $uri = new Uri($validUri);
         $password = 'password';
-        $uri->getAuthority();
         $this->assertEquals($password, $uri->getPass());
     }
 
