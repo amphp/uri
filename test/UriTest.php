@@ -259,15 +259,15 @@ class UriTest extends TestCase {
     }
 
     public function testIsIpV4() {
-        $uri = new Uri('http://www.google.com.tw');
+        $uri = new Uri('http://127.0.0.1');
         $expected = $uri->isIpV4();
-        $this->assertFalse($expected);
+        $this->assertTrue($expected);
     }
 
     public function testIsIpV6() {
-        $uri = new Uri('http://www.google.com.tw');
+        $uri = new Uri('http://::ffff:c0a8:1');
         $expected = $uri->isIpV6();
-        $this->assertFalse($expected);
+        $this->assertTrue($expected);
     }
 
     public function testHasQueryParameter() {
