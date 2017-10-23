@@ -244,7 +244,7 @@ class UriTest extends TestCase {
 
     public function testGetAuthorityWithPassword() {
         $uri = new Uri('ssh://username:password@example.com:123');
-        $this->assertEquals('password', $uri->getPass());
+        $this->assertSame('password', $uri->getPass());
     }
 
     public function testIsIpV4() {
@@ -290,9 +290,8 @@ class UriTest extends TestCase {
     }
 
     public function testIsValid() {
-        $uri = new Uri('http://google.com.tw');
-        $this->assertTrue($uri::isValid('http://google.com.tw'));
-        $this->assertFalse($uri::isValid('http://:80'));
+        $this->assertTrue(Uri::isValid('http://google.com.tw'));
+        $this->assertFalse(Uri::isValid('http://:80'));
     }
 
     public function testGetAbsoluteUri() {
