@@ -222,109 +222,82 @@ class UriTest extends TestCase {
         $this->assertEquals($expectedVals['fragment'], $uri->getFragment());
     }
 
-    public function testNormalize() {
+    public function testNormalizeEmptyUri() {
         $uri = new Uri('');
         $this->assertEquals('', $uri->normalize());
-        $normalUri = 'http://google.com.tw/';
-        $uri = new Uri($normalUri);
-        $this->assertEquals($normalUri, $uri->normalize());
+    }
+
+    public function testNormalizeBasicUri() {
+        $uri = new Uri('http://google.com.tw/');
+        $this->assertEquals('http://google.com.tw/', $uri->normalize());
     }
 
     public function testQueryParams() {
         $uri = new Uri('http://localhost/test.php?params=1&params=2');
-        $expected = ['params' => [1, 2]];
-        $actual = $uri->getAllQueryParameters();
-        $this->assertEquals($expected, $actual);
+        $this->assertEquals(['params' => [1, 2]], $uri->getAllQueryParameters());
     }
 
     public function testGetAuthority() {
         $uri = new Uri('http://www.google.com.tw:54467');
-        $expected = $uri->getAuthority();
-        $this->assertEquals($expected, 'www.google.com.tw:54467');
+        $this->assertEquals('www.google.com.tw:54467', $uri->getAuthority());
     }
 
     public function testGetAuthorityWithPassword() {
-        $validUri = 'ssh://username:password@example.com:123';
-        $uri = new Uri($validUri);
-        $password = 'password';
-        $this->assertEquals($password, $uri->getPass());
-    }
-
-    public function testGetAuthorityWithHiddenPassword() {
-        $validUri = 'ssh://username:password@example.com:123';
-        $uri = new Uri($validUri);
-        $password = 'password';
-        $uri->getAuthority(true);
-        $this->assertEquals($password, $uri->getPass());
+        $uri = new Uri('ssh://username:password@example.com:123');
+        $this->assertEquals('password', $uri->getPass());
     }
 
     public function testIsIpV4() {
         $uri = new Uri('http://127.0.0.1');
-        $expected = $uri->isIpV4();
-        $this->assertTrue($expected);
+        $this->assertTrue($uri->isIpV4());
     }
 
     public function testIsIpV6() {
         $uri = new Uri('http://::ffff:c0a8:1');
-        $expected = $uri->isIpV6();
-        $this->assertTrue($expected);
+        $this->assertTrue($uri->isIpV6());
     }
 
     public function testHasQueryParameter() {
         $uri = new Uri('http://www.google.com.tw?parameter=value');
-        $expected = $uri->hasQueryParameter('parameter');
-        $this->assertTrue($expected);
+        $this->assertTrue($uri->hasQueryParameter('parameter'));
     }
 
     public function testGetQueryParameter() {
         $uri = new Uri('http://www.google.com.tw?parameter=value');
-        $expected = $uri->getQueryParameter('parameter');
-        $this->assertEquals($expected, 'value');
-        $expected = $uri->getQueryParameter('no');
-        $this->assertNull($expected);
+        $this->assertEquals('value', $uri->getQueryParameter('parameter'));
+        $this->assertNull($uri->getQueryParameter('no'));
     }
 
     public function testGetQueryParameterArray() {
         $uri = new Uri('http://www.google.com.tw?parameter=value');
-        $expected = $uri->getQueryParameterArray('parameter');
-        $this->assertEquals($expected[0], 'value');
-        $expected = $uri->getQueryParameterArray('no');
-        $this->assertCount(0, $expected);
+        $this->assertSame(['value'], $uri->getQueryParameterArray('parameter'));
+        $this->assertCount(0, $uri->getQueryParameterArray('no'));
     }
 
     public function testIsValidDnsName() {
-        $expected = isValidDnsName('google.com');
-        $this->assertTrue($expected);
-        $expected = isValidDnsName('google.com.');
-        $this->assertFalse($expected);
+        $this->assertTrue(isValidDnsName('google.com'));
+        $this->assertFalse(isValidDnsName('google.com.'));
     }
 
     public function testInvalidUriException() {
         $this->expectException(InvalidUriException::class);
-        $uri = new Uri('http://:80');
+        new Uri('http://:80');
     }
 
     public function testGetOriginalUri() {
-        $uri = new Uri('http://google.com.tw');
-        $expected = $uri->getOriginalUri();
-        $this->assertEquals($expected, 'http://google.com.tw');
+        $uri = new Uri('http://google.com.tw/../test');
+        $this->assertEquals('http://google.com.tw/../test', $uri->getOriginalUri());
     }
 
     public function testIsValid() {
-        $validUri = 'http://google.com.tw';
-        $inValidUri = 'http://:80';
-        $uri = new Uri($validUri);
-        $expected = $uri->isValid($validUri);
-        $this->assertTrue($expected);
-        $expected = $uri->isValid($inValidUri);
-        $this->assertFalse($expected);
+        $uri = new Uri('http://google.com.tw');
+        $this->assertTrue($uri::isValid('http://google.com.tw'));
+        $this->assertFalse($uri::isValid('http://:80'));
     }
 
     public function testGetAbsoluteUri() {
-        $validUri = 'http://www.google.com.tw';
-        $uri = new Uri($validUri);
-        $expected = $uri->getAbsoluteUri();
-        $this->assertEquals($expected, $validUri);
+        $uri = new Uri('http://www.google.com.tw');
+        $this->assertEquals('http://www.google.com.tw', $uri->getAbsoluteUri());
     }
 
     public function testInvalidDnsNameException() {
