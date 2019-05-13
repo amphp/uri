@@ -28,7 +28,7 @@ function isValidDnsName(string $name) {
  * @throws InvalidDnsNameException If an invalid name or an IDN name without ext/intl being installed has been passed.
  */
 function normalizeDnsName(string $name): string {
-    static $pattern = '/^(?<name>[a-z0-9]([a-z0-9-_]{0,61}[a-z0-9])?)(\.(?&name))*$/i';
+    static $pattern = '/^(?<name>[a-z0-9]([a-z0-9-_]{0,61}[a-z0-9])?)(\.(?&name))*\.?$/i';
 
     if (\function_exists('idn_to_ascii') && \defined('INTL_IDNA_VARIANT_UTS46')) {
         if (false === $result = \idn_to_ascii($name, 0, \INTL_IDNA_VARIANT_UTS46)) {
@@ -47,6 +47,10 @@ function normalizeDnsName(string $name): string {
 
     if (isset($name[253]) || !\preg_match($pattern, $name)) {
         throw new InvalidDnsNameException("Name '{$name}' is not a valid hostname.");
+    }
+
+    if ($name[strlen($name)-1] === '.') {
+        $name = substr($name, 0, -1);
     }
 
     return $name;
