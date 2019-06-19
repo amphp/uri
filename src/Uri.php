@@ -27,6 +27,11 @@ final class Uri {
     private $isIpV4 = false;
     private $isIpV6 = false;
 
+    /**
+     * Uri constructor.
+     * @param string $uri
+     * @throws InvalidUriException
+     */
     public function __construct(string $uri) {
         /** @var false|array $parts */
         if (!$parts = parse_url($uri)) {
@@ -41,40 +46,16 @@ final class Uri {
             $this->{$key} = $value;
         }
 
-        // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.1
-        // "schemes are case-insensitive"
-        $this->scheme = \strtolower($this->scheme);
+        $this->setScheme($this->scheme);
 
-        // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.2
-        // "Although host is case-insensitive, producers and normalizers should use lowercase for
-        // registered names and hexadecimal addresses for the sake of uniformity"
-        if ($inAddr = @\inet_pton(\trim($this->host, "[]"))) {
-            $this->host = \strtolower($this->host);
+        $this->setHost($this->host);
 
-            if (isset($inAddr[4])) {
-                $this->isIpV6 = true;
-            } else {
-                $this->isIpV4 = true;
-            }
-        } elseif ($this->host) {
-            try {
-                $this->host = normalizeDnsName($this->host);
-            } catch (InvalidDnsNameException $e) {
-                throw new InvalidUriException("Invalid URI: Invalid host: {$this->host}", 0, $e);
-            }
-        }
-
-        if ($this->port === 0) {
-            if (isset($this->defaultPortMap[$this->scheme])) {
-                $this->port = $this->defaultPortMap[$this->scheme];
-            }
-        }
+        $this->setPort($this->port);
 
         $this->parseQueryParameters();
 
         if ($this->fragment) {
-            $this->fragment = rawurldecode($this->fragment);
-            $this->fragment = rawurlencode($this->fragment);
+            $this->setFragment($this->fragment);
         }
     }
 
@@ -309,10 +290,26 @@ final class Uri {
     }
 
     /**
+     * @param string $scheme
+     */
+    public function setScheme(string $scheme) {
+        // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.1
+        // "schemes are case-insensitive"
+        $this->scheme = \strtolower($scheme);
+    }
+
+    /**
      * @return string
      */
     public function getUser(): string {
         return $this->user;
+    }
+
+    /**
+     * @param string $user
+     */
+    public function setUser(string $user) {
+        $this->user = $user;
     }
 
     /**
@@ -323,10 +320,43 @@ final class Uri {
     }
 
     /**
+     * @param string $pass
+     */
+    public function setPass(string $pass) {
+        $this->pass = $pass;
+    }
+
+    /**
      * @return string
      */
     public function getHost(): string {
         return $this->host;
+    }
+
+    /**
+     * @param string $host
+     * @throws InvalidUriException
+     */
+    public function setHost(string $host) {
+        $this->host = $host;
+        // http://www.apps.ietf.org/rfc/rfc3986.html#sec-3.2.2
+        // "Although host is case-insensitive, producers and normalizers should use lowercase for
+        // registered names and hexadecimal addresses for the sake of uniformity"
+        if ($inAddr = @\inet_pton(\trim($this->host, "[]"))) {
+            $this->host = \strtolower($this->host);
+
+            if (isset($inAddr[4])) {
+                $this->isIpV6 = true;
+            } else {
+                $this->isIpV4 = true;
+            }
+        } elseif ($this->host) {
+            try {
+                $this->host = normalizeDnsName($this->host);
+            } catch (InvalidDnsNameException $e) {
+                throw new InvalidUriException("Invalid URI: Invalid host: {$this->host}", 0, $e);
+            }
+        }
     }
 
     /**
@@ -337,10 +367,30 @@ final class Uri {
     }
 
     /**
+     * @param int $port
+     * @return void
+     */
+    public function setPort(int $port) {
+        $this->port = $port;
+        if ($this->port === 0) {
+            if (isset($this->defaultPortMap[$this->scheme])) {
+                $this->port = $this->defaultPortMap[$this->scheme];
+            }
+        }
+    }
+
+    /**
      * @return string
      */
     public function getPath(): string {
         return $this->path;
+    }
+
+    /**
+     * @param string $path
+     */
+    public function setPath(string $path) {
+        $this->path = $path;
     }
 
     /**
@@ -351,10 +401,27 @@ final class Uri {
     }
 
     /**
+     * @param string $query
+     */
+    public function setQuery(string $query) {
+        $this->query = $query;
+        $this->parseQueryParameters();
+    }
+
+    /**
      * @return string
      */
     public function getFragment(): string {
         return $this->fragment;
+    }
+
+    /**
+     * @param string $fragment
+     */
+    public function setFragment(string $fragment) {
+        $fragment = rawurldecode($fragment);
+        $fragment = rawurlencode($fragment);
+        $this->fragment = $fragment;
     }
 
     /**
