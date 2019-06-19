@@ -3,8 +3,10 @@ sudo: false
 language: php
 
 php:
-  - 7.0
-  - 7.1
+  - '7.0'
+  - '7.1'
+  - '7.2'
+  - '7.3'
   - nightly
 
 matrix:
@@ -13,16 +15,15 @@ matrix:
   fast_finish: true
 
 before_script:
-  # --ignore-platform-reqs, because https://github.com/FriendsOfPHP/PHP-CS-Fixer/pull/2722
-  - composer update -n --prefer-dist --ignore-platform-reqs
-  - composer require satooshi/php-coveralls dev-master --ignore-platform-reqs
+  - composer update --no-interaction --prefer-dist
+  - composer require php-coveralls/php-coveralls
 
 script:
   - phpdbg -qrr vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
   - PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer --diff --dry-run -v fix
 
 after_script:
-  - php vendor/bin/coveralls -v
+  - php vendor/bin/php-coveralls -v
 
 cache:
   directories:
