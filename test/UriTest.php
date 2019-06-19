@@ -276,7 +276,7 @@ class UriTest extends TestCase {
 
     public function testIsValidDnsName() {
         $this->assertTrue(isValidDnsName('google.com'));
-        $this->assertFalse(isValidDnsName('google.com.'));
+        $this->assertFalse(isValidDnsName('google.com..'));
     }
 
     public function testInvalidUriException() {
@@ -301,6 +301,6 @@ class UriTest extends TestCase {
 
     public function testInvalidDnsNameException() {
         $this->expectException(InvalidDnsNameException::class);
-        normalizeDnsName('google.com.');
+        normalizeDnsName('google.com。。');
     }
 }
